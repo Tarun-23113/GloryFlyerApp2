@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "114200281209",
+    "project_id": "glory-fire-app",
+    "storage_bucket": "glory-fire-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:114200281209:android:c1e9e181e2e1fdf35854a8",
+        "android_client_info": {
+          "package_name": "com.example.gloryflyerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA65uLBpmyfm5l4fNzEE1FmjmKoj8-8CYs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
