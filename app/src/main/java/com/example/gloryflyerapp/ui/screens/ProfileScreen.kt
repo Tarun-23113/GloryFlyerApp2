@@ -15,6 +15,10 @@ import com.example.gloryflyerapp.data.AuthRepository
 @Composable
 fun ProfileScreen(navController: NavHostController) {
     val authRepository = remember { AuthRepository() }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    
+    // Get current user
+    val currentUser = remember { authRepository.getCurrentUser() }
 
     Scaffold(
         topBar = {
@@ -35,7 +39,7 @@ fun ProfileScreen(navController: NavHostController) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profile Icon
+            // Profile Icon and Name
             Icon(
                 Icons.Default.Person,
                 contentDescription = null,
@@ -43,43 +47,52 @@ fun ProfileScreen(navController: NavHostController) {
                 tint = MaterialTheme.colorScheme.primary
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Display user name if available
+            Text(
+                text = currentUser?.displayName ?: "User",
+                style = MaterialTheme.typography.titleLarge
+            )
+            
+            Text(
+                text = currentUser?.email ?: currentUser?.phoneNumber ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Profile Options
             ProfileOption(
                 icon = Icons.Default.Edit,
                 title = "Edit Profile",
-                onClick = { /* TODO: Implement edit profile */ }
+                onClick = { navController.navigate("edit_profile") }
             )
 
             ProfileOption(
                 icon = Icons.Default.Notifications,
                 title = "Notification Settings",
-                onClick = { /* TODO: Implement notifications settings */ }
+                onClick = { navController.navigate("settings") }
             )
 
             ProfileOption(
                 icon = Icons.Default.Lock,
                 title = "Privacy Settings",
-                onClick = { /* TODO: Implement privacy settings */ }
+                onClick = { navController.navigate("privacy_settings") }
             )
 
             ProfileOption(
                 icon = Icons.Default.Help,
                 title = "Help & Support",
-                onClick = { /* TODO: Implement help & support */ }
+                onClick = { navController.navigate("help_support") }
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             // Logout Button
             Button(
-                onClick = {
-                    authRepository.signOut()
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
-                    }
-                },
+                onClick = { showLogoutDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error
@@ -90,6 +103,32 @@ fun ProfileScreen(navController: NavHostController) {
                 Text("Logout")
             }
         }
+    }
+
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Logout") },
+            text = { Text("Are you sure you want to logout?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        authRepository.signOut()
+                        navController.navigate("login") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("Yes, Logout")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

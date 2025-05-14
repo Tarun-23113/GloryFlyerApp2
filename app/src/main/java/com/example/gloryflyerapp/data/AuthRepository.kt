@@ -2,14 +2,18 @@ package com.example.gloryflyerapp.data
 
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
 
 class AuthRepository {
-    private val auth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firestore = Firebase.firestore
 
     suspend fun signInWithPhoneNumber(
         phoneNumber: String,
@@ -46,11 +50,11 @@ class AuthRepository {
         }
     }
 
-    suspend fun verifyOtp(verificationId: String, otp: String): Result<Unit> {
+    suspend fun verifyOtp(verificationId: String, otp: String): Result<FirebaseUser> {
         return try {
             val credential = PhoneAuthProvider.getCredential(verificationId, otp)
-            auth.signInWithCredential(credential).await()
-            Result.success(Unit)
+            val result = auth.signInWithCredential(credential).await()
+            Result.success(result.user!!)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -60,9 +64,36 @@ class AuthRepository {
         return auth.currentUser != null
     }
 
-    fun getCurrentUser() = auth.currentUser
+    fun getCurrentUser(): FirebaseUser? = auth.currentUser
 
     fun signOut() {
         auth.signOut()
+    }
+
+    suspend fun updateUserProfile(userProfile: UserProfile): Result<Unit> {
+        return try {
+            val user = getCurrentUser() ?: throw Exception("User not logged in")
+            
+            // Update Firebase Auth profile
+            val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                .setDisplayName(userProfile.name)
+                .build()
+            user.updateProfile(profileUpdates).await()
+
+            // Update email if changed
+            if (userProfile.email != user.email) {
+                user.updateEmail(userProfile.email).await()
+            }
+
+            // Store additional user data in Firestore
+            firestore.collection("users")
+                .document(user.uid)
+                .set(userProfile)
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

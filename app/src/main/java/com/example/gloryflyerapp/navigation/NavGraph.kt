@@ -37,8 +37,20 @@ fun NavGraph(navController: NavHostController) {
             ProfileScreen(navController)
         }
         
+        composable("edit_profile") {
+            EditProfileScreen(navController)
+        }
+        
         composable("settings") {
             SettingsScreen(navController)
+        }
+        
+        composable("privacy_settings") {
+            PrivacySettingsScreen(navController)
+        }
+        
+        composable("help_support") {
+            HelpSupportScreen(navController)
         }
         
         composable("create_event") {

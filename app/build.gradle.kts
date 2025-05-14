@@ -71,6 +71,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
     
     // WorkManager for scheduling notifications
     implementation("androidx.work:work-runtime-ktx:2.9.0")
