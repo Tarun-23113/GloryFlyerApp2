@@ -8,14 +8,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.gloryflyerapp.data.AuthRepository
 import com.example.gloryflyerapp.ui.components.NameField
 import com.example.gloryflyerapp.ui.components.PhoneNumberField
 import com.example.gloryflyerapp.ui.components.PrimaryButton
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignupScreen(navController: NavHostController) {
     var name by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val scope = rememberCoroutineScope()
+    val authRepository = remember { AuthRepository() }
 
     Column(
         modifier = Modifier
@@ -43,9 +50,48 @@ fun SignupScreen(navController: NavHostController) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        errorMessage?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
         PrimaryButton(
-            text = "Send OTP",
-            onClick = { navController.navigate("otp_verification") }
+            text = if (isLoading) "Sending OTP..." else "Send OTP",
+            onClick = {
+                if (name.isBlank()) {
+                    errorMessage = "Please enter your name"
+                    return@PrimaryButton
+                }
+                if (phoneNumber.length < 10) {
+                    errorMessage = "Please enter a valid phone number"
+                    return@PrimaryButton
+                }
+
+                scope.launch {
+                    isLoading = true
+                    errorMessage = null
+                    try {
+                        authRepository.signInWithPhoneNumber(
+                            phoneNumber = "+91$phoneNumber",
+                            onVerificationCodeSent = { verificationId ->
+                                navController.navigate("otp_verification/$verificationId")
+                            },
+                            onVerificationFailed = { exception ->
+                                errorMessage = exception.message ?: "Failed to send OTP"
+                            }
+                        )
+                    } catch (e: Exception) {
+                        errorMessage = e.message ?: "An error occurred"
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
+            enabled = !isLoading
         )
 
         TextButton(
@@ -53,6 +99,18 @@ fun SignupScreen(navController: NavHostController) {
             modifier = Modifier.padding(top = 8.dp)
         ) {
             Text("Already have an account? Login")
+        }
+
+        // Skip Button
+        TextButton(
+            onClick = { 
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+            },
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text("Skip for now")
         }
     }
 } 

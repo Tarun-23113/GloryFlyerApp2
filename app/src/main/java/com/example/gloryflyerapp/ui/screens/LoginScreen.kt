@@ -33,23 +33,16 @@ fun LoginScreen(navController: NavHostController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Welcome to Glory Flyer",
+            text = "Welcome Back",
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
-        OutlinedTextField(
+        PhoneNumberField(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
-            label = { Text("Phone Number") },
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = {
-                Icon(Icons.Default.Phone, contentDescription = null)
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Phone
-            )
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         errorMessage?.let {
@@ -98,6 +91,18 @@ fun LoginScreen(navController: NavHostController) {
             modifier = Modifier.padding(top = 8.dp)
         ) {
             Text("Don't have an account? Sign up")
+        }
+
+        // Skip Button
+        TextButton(
+            onClick = { 
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+            },
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text("Skip for now")
         }
     }
 } 

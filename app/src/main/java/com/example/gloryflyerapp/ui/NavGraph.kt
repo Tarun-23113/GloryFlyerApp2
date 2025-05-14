@@ -11,7 +11,10 @@ fun NavGraph(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
         composable("signup") { SignupScreen(navController) }
-        composable("otp_verification") { OtpVerificationScreen(navController) }
+        composable("otp_verification/{verificationId}") { backStackEntry ->
+            val verificationId = backStackEntry.arguments?.getString("verificationId") ?: ""
+            OtpVerificationScreen(navController, verificationId)
+        }
         composable("greeting") { GreetingScreen(navController) }
         composable("home") { HomeScreen(navController) }
         composable("create_event") { CreateEventScreen(navController) }
@@ -39,7 +42,7 @@ fun SignupScreen(navController: NavHostController) {
 }
 
 @Composable
-fun OtpVerificationScreen(navController: NavHostController) {
+fun OtpVerificationScreen(navController: NavHostController, verificationId: String) {
     // TODO: Implement UI
 }
 
