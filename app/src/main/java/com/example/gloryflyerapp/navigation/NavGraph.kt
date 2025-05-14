@@ -45,6 +45,10 @@ fun NavGraph(navController: NavHostController) {
             CreateEventScreen(navController)
         }
         
+        composable("events_list") {
+            EventsListScreen(navController)
+        }
+        
         composable("preview_flyer/{eventId}") { backStackEntry ->
             val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
             FlyerPreviewScreen(navController, eventId)

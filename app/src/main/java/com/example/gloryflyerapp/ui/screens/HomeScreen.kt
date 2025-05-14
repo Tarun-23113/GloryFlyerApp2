@@ -15,34 +15,99 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import com.example.gloryflyerapp.data.Event
+import com.example.gloryflyerapp.data.EventType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavHostController) {
     var selectedTab by remember { mutableStateOf(0) }
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearchVisible by remember { mutableStateOf(false) }
     val tabs = listOf("My Events", "Create", "Profile", "Settings")
 
     // Sample recent events (replace with actual data from your repository)
     val recentEvents = remember {
         listOf(
-            Event("1", "Birthday Party", "Birthday celebration", LocalDateTime.now().plusDays(2)),
-            Event("2", "Wedding Anniversary", "Silver jubilee celebration", LocalDateTime.now().plusDays(5)),
-            Event("3", "Corporate Event", "Annual meeting", LocalDateTime.now().plusDays(7)),
-            Event("4", "Family Gathering", "Sunday lunch", LocalDateTime.now().plusDays(3))
+            Event(
+                id = "1",
+                name = "John's Birthday",
+                title = "Birthday Party",
+                description = "Birthday celebration",
+                date = LocalDateTime.now().plusDays(2),
+                type = EventType.BIRTHDAY
+            ),
+            Event(
+                id = "2",
+                name = "Mike & Sarah",
+                title = "Wedding Anniversary",
+                description = "Silver jubilee celebration",
+                date = LocalDateTime.now().plusDays(5),
+                type = EventType.ANNIVERSARY
+            ),
+            Event(
+                id = "3",
+                name = "Annual Meeting",
+                title = "Corporate Event",
+                description = "Annual meeting",
+                date = LocalDateTime.now().plusDays(7),
+                type = EventType.OTHER
+            ),
+            Event(
+                id = "4",
+                name = "Family Reunion",
+                title = "Family Gathering",
+                description = "Sunday lunch",
+                date = LocalDateTime.now().plusDays(3),
+                type = EventType.OTHER
+            )
         )
+    }
+
+    // Filter events based on search query
+    val filteredEvents = remember(searchQuery, recentEvents) {
+        if (searchQuery.isEmpty()) {
+            recentEvents
+        } else {
+            recentEvents.filter { event ->
+                event.title.contains(searchQuery, ignoreCase = true) ||
+                event.description.contains(searchQuery, ignoreCase = true) ||
+                event.name.contains(searchQuery, ignoreCase = true)
+            }
+        }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Glory Flyer") },
-                actions = {
-                    // Search button
-                    IconButton(onClick = { /* TODO: Implement search */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search Events")
+            if (isSearchVisible) {
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onSearch = { },
+                    active = true,
+                    onActiveChange = { },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search events...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                    trailingIcon = {
+                        IconButton(onClick = { 
+                            isSearchVisible = false
+                            searchQuery = ""
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close Search")
+                        }
                     }
-                }
-            )
+                ) { }
+            } else {
+                TopAppBar(
+                    title = { Text("Glory Flyer") },
+                    actions = {
+                        IconButton(onClick = { isSearchVisible = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search Events")
+                        }
+                    }
+                )
+            }
         },
         bottomBar = {
             NavigationBar {
@@ -64,7 +129,16 @@ fun HomeScreen(navController: NavHostController) {
                         onClick = {
                             selectedTab = index
                             when (index) {
-                                0 -> navController.navigate("events_list")
+                                0 -> {
+                                    try {
+                                        navController.navigate("events_list") {
+                                            launchSingleTop = true
+                                        }
+                                    } catch (e: Exception) {
+                                        // Handle navigation error
+                                        e.printStackTrace()
+                                    }
+                                }
                                 1 -> navController.navigate("create_event")
                                 2 -> navController.navigate("profile")
                                 3 -> navController.navigate("settings")
@@ -81,31 +155,40 @@ fun HomeScreen(navController: NavHostController) {
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
-            // Search Bar
-            OutlinedTextField(
-                value = "",
-                onValueChange = { /* TODO: Implement search */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                placeholder = { Text("Search Events") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
-            )
-
             // Recent Events Header
-            Text(
-                text = "Recent Events",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
+            if (!isSearchVisible) {
+                Text(
+                    text = "Recent Events",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
 
-            // Recent Events List
-            LazyColumn {
-                items(recentEvents) { event ->
-                    EventCard(
-                        event = event,
-                        onClick = { navController.navigate("preview_flyer/${event.id}") }
+            if (filteredEvents.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (searchQuery.isEmpty()) 
+                            "No events found" 
+                        else 
+                            "No matching events found for '$searchQuery'",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center
                     )
+                }
+            } else {
+                // Events List
+                LazyColumn {
+                    items(filteredEvents) { event ->
+                        EventCard(
+                            event = event,
+                            onClick = { navController.navigate("preview_flyer/${event.id}") }
+                        )
+                    }
                 }
             }
         }
@@ -144,12 +227,4 @@ private fun EventCard(event: Event, onClick: () -> Unit) {
             )
         }
     }
-}
-
-// Data class for Event (you can move this to a separate file)
-private data class Event(
-    val id: String,
-    val title: String,
-    val description: String,
-    val date: LocalDateTime
-) 
+} 

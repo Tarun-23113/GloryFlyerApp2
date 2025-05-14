@@ -24,17 +24,16 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CreateEventScreen(navController: NavHostController) {
     var eventName by remember { mutableStateOf("") }
+    var eventDescription by remember { mutableStateOf("") }
     var eventType by remember { mutableStateOf<EventType?>(null) }
     var eventDate by remember { mutableStateOf(LocalDateTime.now()) }
-    var description by remember { mutableStateOf("") }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showTypeDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create New Event") },
+                title = { Text("Create Event") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -48,97 +47,94 @@ fun CreateEventScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Event Name
             OutlinedTextField(
                 value = eventName,
                 onValueChange = { eventName = it },
                 label = { Text("Event Name") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = {
-                    Icon(Icons.Default.Event, contentDescription = null)
-                }
+                modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Event Description
+            OutlinedTextField(
+                value = eventDescription,
+                onValueChange = { eventDescription = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Event Type
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showTypeDialog = true }
+            ExposedDropdownMenuBox(
+                expanded = false,
+                onExpandedChange = { }
             ) {
                 OutlinedTextField(
                     value = eventType?.name ?: "Select Event Type",
                     onValueChange = { },
-                    label = { Text("Event Type") },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(Icons.Default.Category, contentDescription = null)
-                    },
                     readOnly = true,
-                    enabled = false
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
+
+                DropdownMenu(
+                    expanded = false,
+                    onDismissRequest = { }
+                ) {
+                    EventType.values().forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.name) },
+                            onClick = { eventType = type }
+                        )
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Event Date
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true }
-            ) {
-                OutlinedTextField(
-                    value = eventDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy 'at' h:mm a")),
-                    onValueChange = { },
-                    label = { Text("Event Date") },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(Icons.Default.CalendarToday, contentDescription = null)
-                    },
-                    readOnly = true,
-                    enabled = false
-                )
-            }
-
-            // Description
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
+                value = eventDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")),
+                onValueChange = { },
+                label = { Text("Date & Time") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5,
-                leadingIcon = {
-                    Icon(Icons.Default.Description, contentDescription = null)
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
+                    }
                 }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
             // Create Button
             Button(
                 onClick = {
                     if (eventName.isBlank() || eventType == null) {
-                        // Show error
                         return@Button
                     }
                     
                     isLoading = true
-                    // TODO: Save event to repository
                     val event = Event(
                         id = System.currentTimeMillis().toString(),
                         name = eventName,
-                        type = eventType ?: EventType.OTHER,
+                        title = eventName,
+                        description = eventDescription,
                         date = eventDate,
-                        description = description
+                        type = eventType ?: EventType.OTHER
                     )
                     navController.navigate("preview_flyer/${event.id}")
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = !isLoading && eventName.isNotBlank() && eventType != null,
-                shape = RoundedCornerShape(8.dp)
+                enabled = !isLoading && eventName.isNotBlank() && eventType != null
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -150,42 +146,6 @@ fun CreateEventScreen(navController: NavHostController) {
                 }
             }
         }
-    }
-
-    if (showTypeDialog) {
-        AlertDialog(
-            onDismissRequest = { showTypeDialog = false },
-            title = { Text("Select Event Type") },
-            text = {
-                Column {
-                    EventType.values().forEach { type ->
-                        ListItem(
-                            headlineContent = { Text(type.name) },
-                            leadingContent = {
-                                Icon(
-                                    when (type) {
-                                        EventType.BIRTHDAY -> Icons.Default.Cake
-                                        EventType.WEDDING -> Icons.Default.Favorite
-                                        EventType.ANNIVERSARY -> Icons.Default.Favorite
-                                        EventType.OTHER -> Icons.Default.Event
-                                    },
-                                    contentDescription = null
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                eventType = type
-                                showTypeDialog = false
-                            }
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showTypeDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 
     if (showDatePicker) {

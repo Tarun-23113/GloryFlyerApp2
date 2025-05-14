@@ -10,12 +10,12 @@ enum class EventType {
 }
 
 data class Event(
-    val id: String = "",
+    val id: String,
     val name: String,
-    val type: EventType,
+    val title: String,
+    val description: String,
     val date: LocalDateTime,
-    val description: String = "",
-    val flyerMessage: String = ""
+    val type: EventType = EventType.OTHER
 ) {
     fun generateFlyerMessage(): String {
         return when (type) {

@@ -10,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,18 +40,23 @@ fun FlyerPreviewScreen(
     var hasError by remember { mutableStateOf(false) }
     var showShareDialog by remember { mutableStateOf(false) }
     var flyerUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    
+    // Add event state
+    var event by remember { mutableStateOf<Event?>(null) }
 
     LaunchedEffect(eventId) {
         try {
-            // TODO: Get event from repository
-            val event = Event(
+            // Create sample event (replace with actual event fetching logic)
+            event = Event(
                 id = eventId,
                 name = "Sample Event",
-                type = EventType.BIRTHDAY,
-                date = LocalDateTime.now()
+                title = "Sample Event Title",
+                description = "This is a sample event description",
+                date = LocalDateTime.now().plusDays(7),
+                type = EventType.OTHER
             )
-            flyerBitmap = FlyerGenerator.generateFlyerBitmap(context, event)
-            flyerUri = FlyerGenerator.generateFlyer(context, event)
+            flyerBitmap = event?.let { FlyerGenerator.generateFlyerBitmap(context, it) }
+            flyerUri = event?.let { FlyerGenerator.generateFlyer(context, it) }
             isLoading = false
         } catch (e: Exception) {
             hasError = true
@@ -68,143 +72,145 @@ fun FlyerPreviewScreen(
                 title = { Text("Flyer Preview") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showShareDialog = true }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            when {
-                isLoading -> {
-                    CircularProgressIndicator()
-                }
-                hasError -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+            // Flyer Preview Content
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Failed to load flyer",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Button(
-                            onClick = { navController.navigateUp() },
-                            modifier = Modifier.padding(top = 16.dp)
+                        CircularProgressIndicator()
+                    }
+                } else if (hasError) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Failed to load flyer")
+                    }
+                } else {
+                    event?.let { currentEvent ->
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Text("Go Back")
+                            Text(
+                                text = currentEvent.title,
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Text(
+                                text = currentEvent.description,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Text(
+                                text = currentEvent.date.format(java.time.format.DateTimeFormatter.ofPattern("MMMM d, yyyy 'at' h:mm a")),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
                     }
                 }
-                else -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .padding(bottom = 16.dp),
-                            shape = RoundedCornerShape(16.dp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    onClick = {
+                        flyerBitmap?.let { bitmap ->
+                            val fileName = FileUtils.generateFileName("Event_$eventId")
+                            val uri = FileUtils.getSharedFileUri(context, bitmap, fileName)
+                            uri?.let {
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "image/png"
+                                    putExtra(Intent.EXTRA_STREAM, it)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Share Flyer"))
+                            }
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Share")
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Button(
+                    onClick = {
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            ) == PackageManager.PERMISSION_GRANTED
                         ) {
                             flyerBitmap?.let { bitmap ->
-                                Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "Flyer Preview",
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                val fileName = FileUtils.generateFileName("Event_$eventId")
+                                val uri = FileUtils.saveBitmapToGallery(context, bitmap, fileName)
+                                if (uri != null) {
+                                    snackbarMessage = "Flyer saved to gallery"
+                                    showSnackbar = true
+                                } else {
+                                    snackbarMessage = "Failed to save flyer"
+                                    showSnackbar = true
+                                }
                             }
+                        } else {
+                            snackbarMessage = "Storage permission required"
+                            showSnackbar = true
                         }
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            Button(
-                                onClick = {
-                                    flyerBitmap?.let { bitmap ->
-                                        val fileName = FileUtils.generateFileName("Event_$eventId")
-                                        val uri = FileUtils.getSharedFileUri(context, bitmap, fileName)
-                                        uri?.let {
-                                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                                type = "image/png"
-                                                putExtra(Intent.EXTRA_STREAM, it)
-                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            }
-                                            context.startActivity(Intent.createChooser(intent, "Share Flyer"))
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.weight(1f).padding(end = 8.dp),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Share")
-                            }
-
-                            Button(
-                                onClick = {
-                                    if (ContextCompat.checkSelfPermission(
-                                            context,
-                                            Manifest.permission.WRITE_EXTERNAL_STORAGE
-                                        ) == PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        flyerBitmap?.let { bitmap ->
-                                            val fileName = FileUtils.generateFileName("Event_$eventId")
-                                            val uri = FileUtils.saveBitmapToGallery(context, bitmap, fileName)
-                                            if (uri != null) {
-                                                snackbarMessage = "Flyer saved to gallery"
-                                                showSnackbar = true
-                                            } else {
-                                                snackbarMessage = "Failed to save flyer"
-                                                showSnackbar = true
-                                            }
-                                        }
-                                    } else {
-                                        snackbarMessage = "Storage permission required"
-                                        showSnackbar = true
-                                    }
-                                },
-                                modifier = Modifier.weight(1f).padding(start = 8.dp),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Icon(Icons.Default.FileDownload, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Download")
-                            }
-                        }
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Download")
                 }
             }
         }
+    }
 
-        if (showSnackbar) {
-            Snackbar(
-                modifier = Modifier.padding(16.dp),
-                action = {
-                    TextButton(onClick = { showSnackbar = false }) {
-                        Text("Dismiss")
-                    }
+    if (showSnackbar) {
+        Snackbar(
+            modifier = Modifier.padding(16.dp),
+            action = {
+                TextButton(onClick = { showSnackbar = false }) {
+                    Text("Dismiss")
                 }
-            ) {
-                Text(snackbarMessage)
             }
+        ) {
+            Text(snackbarMessage)
         }
     }
 

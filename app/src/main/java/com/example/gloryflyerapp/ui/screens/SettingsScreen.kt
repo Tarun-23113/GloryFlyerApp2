@@ -13,15 +13,22 @@ import androidx.navigation.NavHostController
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     var darkMode by remember { mutableStateOf(false) }
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    var autoSaveEnabled by remember { mutableStateOf(true) }
+    var notifications by remember { mutableStateOf(true) }
+    var emailNotifications by remember { mutableStateOf(true) }
+    var pushNotifications by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { 
+                        try {
+                            navController.navigateUp()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -32,144 +39,120 @@ fun SettingsScreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(16.dp)
         ) {
-            // Appearance
-            SettingsSection(title = "Appearance") {
-                SettingsSwitch(
-                    icon = Icons.Default.DarkMode,
-                    title = "Dark Mode",
-                    checked = darkMode,
-                    onCheckedChange = { darkMode = it }
-                )
-            }
+            // Appearance Section
+            Text(
+                text = "Appearance",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
 
-            // Notifications
-            SettingsSection(title = "Notifications") {
-                SettingsSwitch(
-                    icon = Icons.Default.Notifications,
-                    title = "Enable Notifications",
-                    checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it }
-                )
-                if (notificationsEnabled) {
-                    SettingsSwitch(
-                        icon = Icons.Default.Event,
-                        title = "Event Reminders",
-                        checked = true,
-                        onCheckedChange = { /* TODO */ }
-                    )
-                    SettingsSwitch(
-                        icon = Icons.Default.Email,
-                        title = "Email Notifications",
-                        checked = true,
-                        onCheckedChange = { /* TODO */ }
-                    )
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Dark Mode")
+                        Switch(
+                            checked = darkMode,
+                            onCheckedChange = { darkMode = it }
+                        )
+                    }
                 }
             }
 
-            // Data & Storage
-            SettingsSection(title = "Data & Storage") {
-                SettingsSwitch(
-                    icon = Icons.Default.Save,
-                    title = "Auto-save Flyers",
-                    checked = autoSaveEnabled,
-                    onCheckedChange = { autoSaveEnabled = it }
-                )
-                SettingsButton(
-                    icon = Icons.Default.Delete,
-                    title = "Clear Cache",
-                    onClick = { /* TODO */ }
-                )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Notifications Section
+            Text(
+                text = "Notifications",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Enable Notifications")
+                        Switch(
+                            checked = notifications,
+                            onCheckedChange = { 
+                                notifications = it
+                                if (!it) {
+                                    emailNotifications = false
+                                    pushNotifications = false
+                                }
+                            }
+                        )
+                    }
+
+                    if (notifications) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Email Notifications")
+                            Switch(
+                                checked = emailNotifications,
+                                onCheckedChange = { emailNotifications = it }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Push Notifications")
+                            Switch(
+                                checked = pushNotifications,
+                                onCheckedChange = { pushNotifications = it }
+                            )
+                        }
+                    }
+                }
             }
 
-            // About
-            SettingsSection(title = "About") {
-                SettingsButton(
-                    icon = Icons.Default.Info,
-                    title = "App Version",
-                    subtitle = "1.0.0",
-                    onClick = { /* TODO */ }
-                )
-                SettingsButton(
-                    icon = Icons.Default.Help,
-                    title = "Help & Support",
-                    onClick = { /* TODO */ }
-                )
-                SettingsButton(
-                    icon = Icons.Default.PrivacyTip,
-                    title = "Privacy Policy",
-                    onClick = { /* TODO */ }
-                )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // About Section
+            Text(
+                text = "About",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Version 1.0.0",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "© 2024 Glory Flyer",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }
-}
-
-@Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-        content()
-        Divider()
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsSwitch(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    ListItem(
-        headlineContent = { Text(title) },
-        leadingContent = {
-            Icon(
-                icon,
-                contentDescription = title,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
-        trailingContent = {
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String? = null,
-    onClick: () -> Unit
-) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = subtitle?.let { { Text(it) } },
-        leadingContent = {
-            Icon(
-                icon,
-                contentDescription = title,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
 } 

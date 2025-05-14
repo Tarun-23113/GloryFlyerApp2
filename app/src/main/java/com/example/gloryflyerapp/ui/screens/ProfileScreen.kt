@@ -15,7 +15,6 @@ import com.example.gloryflyerapp.data.AuthRepository
 @Composable
 fun ProfileScreen(navController: NavHostController) {
     val authRepository = remember { AuthRepository() }
-    val currentUser = remember { authRepository.getCurrentUser() }
 
     Scaffold(
         topBar = {
@@ -36,91 +35,61 @@ fun ProfileScreen(navController: NavHostController) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profile Picture
-            Surface(
-                modifier = Modifier
-                    .size(120.dp)
-                    .padding(bottom = 16.dp),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .padding(16.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-
-            // User Info
-            Text(
-                text = currentUser?.phoneNumber ?: "User",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
+            // Profile Icon
+            Icon(
+                Icons.Default.Person,
+                contentDescription = null,
+                modifier = Modifier.size(100.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
+            
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Stats
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatItem("Events", "12")
-                StatItem("Flyers", "24")
-                StatItem("Shared", "8")
-            }
-
-            // Settings Options
+            // Profile Options
             ProfileOption(
                 icon = Icons.Default.Edit,
                 title = "Edit Profile",
-                onClick = { /* TODO */ }
+                onClick = { /* TODO: Implement edit profile */ }
             )
+
             ProfileOption(
                 icon = Icons.Default.Notifications,
                 title = "Notification Settings",
-                onClick = { /* TODO */ }
+                onClick = { /* TODO: Implement notifications settings */ }
             )
+
             ProfileOption(
-                icon = Icons.Default.Security,
-                title = "Privacy & Security",
-                onClick = { /* TODO */ }
+                icon = Icons.Default.Lock,
+                title = "Privacy Settings",
+                onClick = { /* TODO: Implement privacy settings */ }
             )
+
             ProfileOption(
                 icon = Icons.Default.Help,
                 title = "Help & Support",
-                onClick = { /* TODO */ }
+                onClick = { /* TODO: Implement help & support */ }
             )
-            ProfileOption(
-                icon = Icons.Default.Logout,
-                title = "Logout",
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Logout Button
+            Button(
                 onClick = {
                     authRepository.signOut()
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
-                }
-            )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Logout")
+            }
         }
-    }
-}
-
-@Composable
-private fun StatItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
@@ -131,15 +100,34 @@ private fun ProfileOption(
     title: String,
     onClick: () -> Unit
 ) {
-    ListItem(
-        headlineContent = { Text(title) },
-        leadingContent = {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
                 icon,
-                contentDescription = title,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+        }
+    }
 } 
