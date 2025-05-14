@@ -1,99 +1,200 @@
 package com.example.gloryflyerapp.utils
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Typeface
-import android.graphics.drawable.Drawable
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import com.example.gloryflyerapp.R
+import android.graphics.*
+import android.view.View
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import com.example.gloryflyerapp.data.Event
-import com.example.gloryflyerapp.data.EventType
-import java.io.File
-import java.io.FileOutputStream
 import java.time.format.DateTimeFormatter
-import android.net.Uri
+import android.graphics.Color as AndroidColor
 
 object FlyerGenerator {
-    fun generateFlyerBitmap(context: Context, event: Event): Bitmap {
-        // Create a bitmap with a white background
-        val width = 1080
-        val height = 1920
+    fun generateFlyerBitmap(context: Context, event: Event, width: Int = 1080, height: Int = 1920): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         
-        // Draw background
-        canvas.drawColor(Color.WHITE)
-        
-        // Draw event type icon
-        val iconResId = when (event.type) {
-            EventType.BIRTHDAY -> R.drawable.ic_birthday
-            EventType.WEDDING -> R.drawable.ic_wedding
-            EventType.ANNIVERSARY -> R.drawable.ic_anniversary
-            EventType.OTHER -> R.drawable.ic_event
+        // Set background gradient
+        val gradient = LinearGradient(
+            0f, 0f, 0f, height.toFloat(),
+            AndroidColor.rgb(33, 150, 243), // Primary blue
+            AndroidColor.rgb(13, 71, 161), // Darker blue
+            Shader.TileMode.CLAMP
+        )
+        val paint = Paint().apply {
+            shader = gradient
         }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
         
-        val icon = ContextCompat.getDrawable(context, iconResId)
-        icon?.setBounds(width / 4, height / 8, width * 3 / 4, height / 4)
-        icon?.draw(canvas)
-        
-        // Draw event name
-        val titlePaint = Paint().apply {
-            color = Color.BLACK
-            textSize = 72f
+        // Reset paint for text
+        paint.reset()
+        paint.apply {
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+        }
+
+        // Add decorative elements
+        val decorPaint = Paint().apply {
+            color = AndroidColor.argb(50, 255, 255, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = 5f
+        }
+        canvas.drawCircle(width * 0.8f, height * 0.2f, 200f, decorPaint)
+        canvas.drawCircle(width * 0.2f, height * 0.8f, 150f, decorPaint)
+
+        // Draw event type badge
+        val badgePaint = Paint().apply {
+            color = AndroidColor.WHITE
+            alpha = 50
+            style = Paint.Style.FILL
+        }
+        val badgeRect = RectF(
+            width * 0.2f,
+            150f,
+            width * 0.8f,
+            250f
+        )
+        canvas.drawRoundRect(badgeRect, 25f, 25f, badgePaint)
+
+        // Draw event type
+        paint.apply {
+            color = AndroidColor.WHITE
+            textSize = 64f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
         }
-        canvas.drawText(event.name, width / 2f, height / 3f, titlePaint)
-        
-        // Draw date
-        val datePaint = Paint().apply {
-            color = Color.GRAY
-            textSize = 48f
-            textAlign = Paint.Align.CENTER
+        canvas.drawText(
+            event.type.name.replace("_", " "),
+            width / 2f,
+            220f,
+            paint
+        )
+
+        // Draw title with shadow
+        paint.apply {
+            textSize = 120f
+            setShadowLayer(10f, 0f, 5f, AndroidColor.argb(100, 0, 0, 0))
         }
-        val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy 'at' h:mm a")
-        canvas.drawText(event.date.format(dateFormatter), width / 2f, height / 2.5f, datePaint)
-        
-        // Draw description if available
-        if (event.description.isNotBlank()) {
-            val descPaint = Paint().apply {
-                color = Color.DKGRAY
-                textSize = 36f
-                textAlign = Paint.Align.CENTER
-            }
-            canvas.drawText(event.description, width / 2f, height / 2f, descPaint)
+        canvas.drawText(
+            event.title,
+            width / 2f,
+            450f,
+            paint
+        )
+        paint.clearShadowLayer()
+
+        // Draw description
+        paint.apply {
+            textSize = 72f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         }
         
-        // Draw app name
-        val appNamePaint = Paint().apply {
-            color = Color.GRAY
-            textSize = 24f
-            textAlign = Paint.Align.CENTER
+        // Word wrap description
+        val descriptionLines = wrapText(event.description, paint, width - 200f)
+        var yPos = 650f
+        for (line in descriptionLines) {
+            canvas.drawText(line, width / 2f, yPos, paint)
+            yPos += 100f
         }
-        canvas.drawText("Created with Glory Flyer", width / 2f, height * 0.95f, appNamePaint)
+
+        // Draw date and time section
+        val dateTimeBg = Paint().apply {
+            color = AndroidColor.WHITE
+            alpha = 30
+            style = Paint.Style.FILL
+        }
+        val dateTimeRect = RectF(
+            width * 0.1f,
+            yPos + 50f,
+            width * 0.9f,
+            yPos + 300f
+        )
+        canvas.drawRoundRect(dateTimeRect, 25f, 25f, dateTimeBg)
+
+        paint.apply {
+            color = AndroidColor.WHITE
+            textSize = 80f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
         
+        // Date
+        canvas.drawText(
+            event.date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")),
+            width / 2f,
+            yPos + 150f,
+            paint
+        )
+
+        // Time
+        paint.textSize = 72f
+        canvas.drawText(
+            event.date.format(DateTimeFormatter.ofPattern("h:mm a")),
+            width / 2f,
+            yPos + 250f,
+            paint
+        )
+
+        // Draw host information at bottom
+        paint.apply {
+            textSize = 64f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        }
+        canvas.drawText(
+            "Hosted by",
+            width / 2f,
+            height - 200f,
+            paint
+        )
+        paint.apply {
+            textSize = 80f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        canvas.drawText(
+            event.name,
+            width / 2f,
+            height - 100f,
+            paint
+        )
+
         return bitmap
     }
 
-    fun generateFlyer(context: Context, event: Event): Uri {
-        // Generate the bitmap
-        val bitmap = generateFlyerBitmap(context, event)
+    private fun wrapText(text: String, paint: Paint, maxWidth: Float): List<String> {
+        val words = text.split(" ")
+        val lines = mutableListOf<String>()
+        var currentLine = StringBuilder()
 
-        // Save the bitmap to a file
-        val file = File(context.cacheDir, "flyer_${event.id}.png")
-        FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        for (word in words) {
+            val testLine = if (currentLine.isEmpty()) word else "${currentLine} $word"
+            val measureWidth = paint.measureText(testLine)
+
+            if (measureWidth <= maxWidth) {
+                currentLine = StringBuilder(testLine)
+            } else {
+                if (currentLine.isNotEmpty()) {
+                    lines.add(currentLine.toString())
+                }
+                currentLine = StringBuilder(word)
+            }
         }
 
-        // Return the URI for the saved file
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        if (currentLine.isNotEmpty()) {
+            lines.add(currentLine.toString())
+        }
+
+        return lines
+    }
+
+    fun saveToGallery(context: Context, bitmap: Bitmap, fileName: String): String {
+        val imagesDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
+        val image = java.io.File(imagesDir, "$fileName.png")
+        image.outputStream().use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        return image.absolutePath
     }
 } 

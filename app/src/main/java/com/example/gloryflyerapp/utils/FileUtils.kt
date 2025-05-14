@@ -48,27 +48,46 @@ object FileUtils {
     }
 
     fun getSharedFileUri(context: Context, bitmap: Bitmap, fileName: String): Uri? {
-        val cacheDir = File(context.cacheDir, "shared_flyers").apply { mkdirs() }
-        val file = File(cacheDir, fileName)
+        return try {
+            // Create directory if it doesn't exist
+            val cacheDir = File(context.cacheDir, "shared_flyers").apply { mkdirs() }
+            val file = File(cacheDir, fileName)
 
-        try {
+            // Write bitmap to file
             FileOutputStream(file).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             }
 
-            return FileProvider.getUriForFile(
+            // Get content URI using FileProvider
+            FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
                 file
             )
         } catch (e: Exception) {
             e.printStackTrace()
-            return null
+            null
         }
     }
 
     fun generateFileName(eventName: String): String {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         return "Flyer_${eventName.replace(" ", "_")}_$timestamp.png"
+    }
+
+    fun saveToGallery(context: Context, bitmap: Bitmap, fileName: String): Uri? {
+        return try {
+            val imagesDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
+            val file = File(imagesDir, fileName)
+            
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            
+            Uri.fromFile(file)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 } 
