@@ -101,7 +101,7 @@ object FlyerGenerator {
             yPos += 100f
         }
 
-        // Draw date and time section
+        // Draw date and time section with larger, more prominent design
         val dateTimeBg = Paint().apply {
             color = AndroidColor.WHITE
             alpha = 30
@@ -109,54 +109,45 @@ object FlyerGenerator {
         }
         val dateTimeRect = RectF(
             width * 0.1f,
-            yPos + 50f,
+            yPos + 100f,
             width * 0.9f,
-            yPos + 300f
+            yPos + 400f
         )
-        canvas.drawRoundRect(dateTimeRect, 25f, 25f, dateTimeBg)
+        canvas.drawRoundRect(dateTimeRect, 40f, 40f, dateTimeBg)
+
+        // Add a subtle glow effect to the date/time box
+        val glowPaint = Paint().apply {
+            color = AndroidColor.WHITE
+            alpha = 15
+            style = Paint.Style.STROKE
+            strokeWidth = 8f
+            maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
+        }
+        canvas.drawRoundRect(dateTimeRect, 40f, 40f, glowPaint)
 
         paint.apply {
             color = AndroidColor.WHITE
-            textSize = 80f
+            textSize = 90f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         
-        // Date
+        // Date with larger text and better spacing
         canvas.drawText(
             event.date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")),
             width / 2f,
-            yPos + 150f,
+            yPos + 200f,
             paint
         )
 
-        // Time
-        paint.textSize = 72f
+        // Time with prominent display
+        paint.apply {
+            textSize = 100f
+            typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
+        }
         canvas.drawText(
             event.date.format(DateTimeFormatter.ofPattern("h:mm a")),
             width / 2f,
-            yPos + 250f,
-            paint
-        )
-
-        // Draw host information at bottom
-        paint.apply {
-            textSize = 64f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-        }
-        canvas.drawText(
-            "Hosted by",
-            width / 2f,
-            height - 200f,
-            paint
-        )
-        paint.apply {
-            textSize = 80f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-        canvas.drawText(
-            event.name,
-            width / 2f,
-            height - 100f,
+            yPos + 350f,
             paint
         )
 

@@ -233,7 +233,7 @@ fun CreateEventScreen(navController: NavHostController) {
 
     // Time Picker Dialog
     if (showTimePicker) {
-        TimePickerDialog(
+        CustomTimePickerDialog(
             onTimeSelected = { hour, minute ->
                 val currentDate = eventDate.toLocalDate()
                 eventDate = LocalDateTime.of(currentDate, LocalTime.of(hour, minute))
@@ -247,7 +247,7 @@ fun CreateEventScreen(navController: NavHostController) {
 }
 
 @Composable
-fun TimePickerDialog(
+private fun CustomTimePickerDialog(
     onTimeSelected: (hour: Int, minute: Int) -> Unit,
     onDismiss: () -> Unit,
     initialHour: Int = LocalTime.now().hour,

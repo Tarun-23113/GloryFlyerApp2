@@ -151,20 +151,6 @@ fun FlyerPreviewScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Event Host
-                        Text(
-                            text = "Hosted by",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = event.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
 
@@ -178,7 +164,10 @@ fun FlyerPreviewScreen(
                     // Share Button
                     Button(
                         onClick = { showShareDialog = true },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
@@ -201,7 +190,10 @@ fun FlyerPreviewScreen(
                                 showSnackbar = true
                             }
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
                     ) {
                         Icon(Icons.Default.Download, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
@@ -216,10 +208,29 @@ fun FlyerPreviewScreen(
     if (showShareDialog) {
         AlertDialog(
             onDismissRequest = { showShareDialog = false },
-            title = { Text("Share Flyer") },
-            text = { Text("Choose how you want to share the flyer") },
+            title = { 
+                Text(
+                    "Share Flyer",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = { 
+                Column {
+                    Text(
+                        "Share this event with your friends and family!",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "The flyer will be shared as an image that can be sent through any messaging app.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         val currentEvent = event
                         if (currentEvent != null) {
@@ -235,6 +246,8 @@ fun FlyerPreviewScreen(
                                     action = Intent.ACTION_SEND
                                     type = "image/png"
                                     putExtra(Intent.EXTRA_STREAM, uri)
+                                    putExtra(Intent.EXTRA_SUBJECT, currentEvent.title)
+                                    putExtra(Intent.EXTRA_TEXT, "Check out this event: ${currentEvent.title}")
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
                                 context.startActivity(Intent.createChooser(shareIntent, "Share Flyer"))
@@ -244,9 +257,14 @@ fun FlyerPreviewScreen(
                             }
                         }
                         showShareDialog = false
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
-                    Text("Share")
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Share Now")
                 }
             },
             dismissButton = {
@@ -261,8 +279,15 @@ fun FlyerPreviewScreen(
     if (showSnackbar) {
         Snackbar(
             modifier = Modifier.padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.inverseSurface,
+            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
             action = {
-                TextButton(onClick = { showSnackbar = false }) {
+                TextButton(
+                    onClick = { showSnackbar = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.inversePrimary
+                    )
+                ) {
                     Text("Dismiss")
                 }
             }

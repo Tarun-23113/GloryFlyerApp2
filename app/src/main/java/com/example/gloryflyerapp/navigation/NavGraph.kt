@@ -65,5 +65,10 @@ fun NavGraph(navController: NavHostController) {
             val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
             FlyerPreviewScreen(navController, eventId)
         }
+
+        composable("edit_event/{eventId}") { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+            EditEventScreen(navController, eventId)
+        }
     }
 } 

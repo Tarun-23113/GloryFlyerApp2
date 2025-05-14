@@ -71,12 +71,6 @@ fun ProfileScreen(navController: NavHostController) {
             )
 
             ProfileOption(
-                icon = Icons.Default.Notifications,
-                title = "Notification Settings",
-                onClick = { navController.navigate("settings") }
-            )
-
-            ProfileOption(
                 icon = Icons.Default.Lock,
                 title = "Privacy Settings",
                 onClick = { navController.navigate("privacy_settings") }

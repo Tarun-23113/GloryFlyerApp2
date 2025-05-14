@@ -1,18 +1,21 @@
 package com.example.gloryflyerapp.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.gloryflyerapp.ui.theme.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
-    var darkMode by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     var notifications by remember { mutableStateOf(true) }
     var emailNotifications by remember { mutableStateOf(true) }
     var pushNotifications by remember { mutableStateOf(true) }
@@ -60,8 +63,10 @@ fun SettingsScreen(navController: NavHostController) {
                     ) {
                         Text("Dark Mode")
                         Switch(
-                            checked = darkMode,
-                            onCheckedChange = { darkMode = it }
+                            checked = ThemeManager.isDarkMode,
+                            onCheckedChange = { 
+                                ThemeManager.toggleTheme(context)
+                            }
                         )
                     }
                 }
