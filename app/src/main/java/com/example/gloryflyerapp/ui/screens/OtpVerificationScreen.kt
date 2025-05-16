@@ -1,5 +1,6 @@
 package com.example.gloryflyerapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -17,10 +18,13 @@ import com.example.gloryflyerapp.ui.components.OtpField
 import com.example.gloryflyerapp.ui.components.PrimaryButton
 import kotlinx.coroutines.launch
 
+private const val TAG = "OtpVerificationScreen"
+
 @Composable
 fun OtpVerificationScreen(
     navController: NavHostController,
-    verificationId: String
+    verificationId: String,
+    name: String? = null
 ) {
     var otp by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -49,17 +53,10 @@ fun OtpVerificationScreen(
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        OutlinedTextField(
+        OtpField(
             value = otp,
             onValueChange = { otp = it },
-            label = { Text("Enter OTP") },
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = null)
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number
-            )
+            modifier = Modifier.fillMaxWidth()
         )
 
         errorMessage?.let {
@@ -67,7 +64,7 @@ fun OtpVerificationScreen(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
 
@@ -80,28 +77,35 @@ fun OtpVerificationScreen(
                 }
 
                 scope.launch {
-                    isLoading = true
-                    errorMessage = null
-
                     try {
-                        authRepository.verifyOtp(verificationId, otp).fold(
+                        isLoading = true
+                        errorMessage = null
+                        Log.d(TAG, "Starting OTP verification for ID: $verificationId")
+                        
+                        authRepository.verifyOtp(verificationId, otp, name).fold(
                             onSuccess = {
+                                Log.d(TAG, "OTP verification successful")
                                 navController.navigate("home") {
                                     popUpTo("login") { inclusive = true }
                                 }
                             },
                             onFailure = { exception ->
+                                Log.e(TAG, "OTP verification failed", exception)
                                 errorMessage = exception.message ?: "Verification failed"
                             }
                         )
                     } catch (e: Exception) {
+                        Log.e(TAG, "Error during OTP verification", e)
                         errorMessage = e.message ?: "An error occurred"
                     } finally {
                         isLoading = false
                     }
                 }
             },
-            enabled = !isLoading
+            enabled = !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
         )
 
         TextButton(

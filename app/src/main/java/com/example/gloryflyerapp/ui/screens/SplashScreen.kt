@@ -46,7 +46,7 @@ fun SplashScreen(navController: NavHostController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF2196F3)),
+            .background(Color(0xFF0A0A0A)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -58,8 +58,7 @@ fun SplashScreen(navController: NavHostController) {
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "App Logo",
                 modifier = Modifier
-                    .size(120.dp)
-                    .padding(bottom = 16.dp)
+                    .fillMaxSize()
             )
 
             Text(

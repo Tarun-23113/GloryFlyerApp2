@@ -1,5 +1,6 @@
 package com.example.gloryflyerapp.data
 
+import android.util.Log
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit
 class AuthRepository {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firestore = Firebase.firestore
+    private val TAG = "AuthRepository"
 
     suspend fun signInWithPhoneNumber(
         phoneNumber: String,
@@ -21,12 +23,15 @@ class AuthRepository {
         onVerificationFailed: (Exception) -> Unit
     ) {
         try {
+            Log.d(TAG, "Starting phone authentication for: $phoneNumber")
+            
             val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                 override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                    // Auto-verification completed
+                    Log.d(TAG, "Auto-verification completed")
                 }
 
                 override fun onVerificationFailed(e: FirebaseException) {
+                    Log.e(TAG, "Verification failed: ${e.message}", e)
                     onVerificationFailed(e)
                 }
 
@@ -34,6 +39,7 @@ class AuthRepository {
                     verificationId: String,
                     token: PhoneAuthProvider.ForceResendingToken
                 ) {
+                    Log.d(TAG, "Verification code sent successfully")
                     onVerificationCodeSent(verificationId)
                 }
             }
@@ -44,16 +50,30 @@ class AuthRepository {
                 .setCallbacks(callbacks)
                 .build()
 
+            Log.d(TAG, "Initiating phone number verification")
             PhoneAuthProvider.verifyPhoneNumber(options)
+            
         } catch (e: Exception) {
+            Log.e(TAG, "Error in signInWithPhoneNumber: ${e.message}", e)
             onVerificationFailed(e)
         }
     }
 
-    suspend fun verifyOtp(verificationId: String, otp: String): Result<FirebaseUser> {
+    suspend fun verifyOtp(verificationId: String, otp: String, name: String? = null): Result<FirebaseUser> {
         return try {
             val credential = PhoneAuthProvider.getCredential(verificationId, otp)
             val result = auth.signInWithCredential(credential).await()
+            
+            // If name is provided (during signup), create user profile
+            if (name != null && result.user != null) {
+                val userProfile = UserProfile(
+                    name = name,
+                    email = result.user?.email ?: "",
+                    phone = result.user?.phoneNumber ?: ""
+                )
+                updateUserProfile(userProfile)
+            }
+            
             Result.success(result.user!!)
         } catch (e: Exception) {
             Result.failure(e)
@@ -80,10 +100,8 @@ class AuthRepository {
                 .build()
             user.updateProfile(profileUpdates).await()
 
-            // Update email if changed
-            if (userProfile.email != user.email) {
-                user.updateEmail(userProfile.email).await()
-            }
+            // Deprecated: updateEmail is deprecated. Consider using a newer Firebase Auth API or alternative method.
+            // user.updateEmail(userProfile.email).await()
 
             // Store additional user data in Firestore
             firestore.collection("users")

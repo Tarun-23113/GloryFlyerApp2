@@ -1,10 +1,7 @@
 package com.example.gloryflyerapp.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,35 +24,52 @@ import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateEventScreen(navController: NavHostController) {
-    var eventName by remember { mutableStateOf("") }
-    var eventType by remember { mutableStateOf<EventType?>(null) }
-    var eventDate by remember { mutableStateOf(LocalDateTime.now()) }
-    var eventDescription by remember { mutableStateOf("") }
+fun EditEventScreen(
+    navController: NavHostController,
+    eventId: String
+) {
+    // Get event from repository
+    val event = remember(eventId) { EventRepository.getEvent(eventId) }
+    
+    var eventName by remember { mutableStateOf(event?.title ?: "") }
+    var eventType by remember { mutableStateOf(event?.type) }
+    var eventDate by remember { mutableStateOf(event?.date ?: LocalDateTime.now()) }
+    var eventDescription by remember { mutableStateOf(event?.description ?: "") }
     var isLoading by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+    var showSnackbar by remember { mutableStateOf(false) }
+    var snackbarMessage by remember { mutableStateOf("") }
 
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = eventDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                val selectedDate = Instant.ofEpochMilli(utcTimeMillis)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate()
-                return !selectedDate.isBefore(LocalDate.now())
-            }
-        }
+        initialSelectedDateMillis = eventDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     )
+
+    if (event == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            Text(
+                text = "Event not found",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        return
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Event") },
+                title = { Text("Edit Event") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 }
             )
@@ -161,7 +175,7 @@ fun CreateEventScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Create Button
+            // Save Button
             Button(
                 onClick = {
                     if (eventName.isBlank() || eventType == null) {
@@ -169,16 +183,16 @@ fun CreateEventScreen(navController: NavHostController) {
                     }
                     
                     isLoading = true
-                    val event = Event(
-                        id = System.currentTimeMillis().toString(),
+                    val updatedEvent = Event(
+                        id = event.id,
                         name = eventName,
                         title = eventName,
                         description = eventDescription,
                         date = eventDate,
                         type = eventType ?: EventType.OTHER
                     )
-                    // Store the event
-                    EventRepository.addEvent(event)
+                    // Update the event
+                    EventRepository.updateEvent(updatedEvent)
                     navController.navigate("preview_flyer/${event.id}")
                 },
                 modifier = Modifier
@@ -192,7 +206,7 @@ fun CreateEventScreen(navController: NavHostController) {
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Create Event")
+                    Text("Save Changes")
                 }
             }
         }
@@ -244,6 +258,20 @@ fun CreateEventScreen(navController: NavHostController) {
             initialHour = eventDate.hour,
             initialMinute = eventDate.minute
         )
+    }
+
+    // Snackbar
+    if (showSnackbar) {
+        Snackbar(
+            modifier = Modifier.padding(16.dp),
+            action = {
+                TextButton(onClick = { showSnackbar = false }) {
+                    Text("Dismiss")
+                }
+            }
+        ) {
+            Text(snackbarMessage)
+        }
     }
 }
 

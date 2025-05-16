@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import com.example.gloryflyerapp.navigation.NavGraph
+import com.example.gloryflyerapp.ui.NavGraph
 import com.example.gloryflyerapp.ui.theme.GloryFlyerAppTheme
 import com.example.gloryflyerapp.ui.theme.ThemeManager
 
@@ -23,9 +23,7 @@ class MainActivity : ComponentActivity() {
         ThemeManager.init(this)
         
         setContent {
-            GloryFlyerAppTheme(
-                darkTheme = ThemeManager.isDarkMode
-            ) {
+            GloryFlyerAppTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

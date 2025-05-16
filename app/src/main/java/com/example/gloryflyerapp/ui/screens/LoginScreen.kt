@@ -1,108 +1,112 @@
 package com.example.gloryflyerapp.ui.screens
 
+
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.gloryflyerapp.data.AuthRepository
-import com.example.gloryflyerapp.ui.components.PhoneNumberField
-import com.example.gloryflyerapp.ui.components.PrimaryButton
-import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
+private const val TAG = "LoginScreen"
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavHostController) {
     var phoneNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
     val authRepository = remember { AuthRepository() }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Welcome Back",
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        PhoneNumberField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Login") }
             )
         }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                "Welcome Back!",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
 
-        PrimaryButton(
-            text = if (isLoading) "Sending OTP..." else "Send OTP",
-            onClick = {
-                if (phoneNumber.length < 10) {
-                    errorMessage = "Please enter a valid phone number"
-                    return@PrimaryButton
-                }
-                
-                scope.launch {
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { 
+                    if (it.length <= 10) {
+                        phoneNumber = it
+                        errorMessage = null
+                    }
+                },
+                label = { Text("Phone Number") },
+                leadingIcon = {
+                    Icon(Icons.Default.Phone, contentDescription = "Phone")
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Phone
+                ),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    if (phoneNumber.length < 10) {
+                        errorMessage = "Please enter a valid phone number"
+                        return@Button
+                    }
                     isLoading = true
                     errorMessage = null
-                    
-                    try {
-                        authRepository.signInWithPhoneNumber(
-                            phoneNumber = "+91$phoneNumber",
-                            onVerificationCodeSent = { verificationId ->
-                                navController.navigate("otp_verification/$verificationId")
-                            },
-                            onVerificationFailed = { exception ->
-                                errorMessage = exception.message ?: "Verification failed"
-                            }
-                        )
-                    } catch (e: Exception) {
-                        errorMessage = e.message ?: "An error occurred"
-                    } finally {
-                        isLoading = false
-                    }
+                    // TODO: Implement phone authentication
+                    navController.navigate("otp_verification/test123")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Continue")
                 }
-            },
-            enabled = !isLoading
-        )
+            }
 
-        TextButton(
-            onClick = { navController.navigate("signup") },
-            modifier = Modifier.padding(top = 8.dp)
-        ) {
-            Text("Don't have an account? Sign up")
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Skip Button
-        TextButton(
-            onClick = { 
-                navController.navigate("home") {
-                    popUpTo("login") { inclusive = true }
-                }
-            },
-            modifier = Modifier.padding(top = 8.dp)
-        ) {
-            Text("Skip for now")
+            TextButton(
+                onClick = { navController.navigate("signup") }
+            ) {
+                Text("Don't have an account? Sign up")
+            }
         }
     }
 } 

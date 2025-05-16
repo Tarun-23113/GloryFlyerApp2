@@ -2,6 +2,9 @@ package com.example.gloryflyerapp.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,7 +29,7 @@ fun ProfileScreen(navController: NavHostController) {
                 title = { Text("Profile") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -77,7 +80,7 @@ fun ProfileScreen(navController: NavHostController) {
             )
 
             ProfileOption(
-                icon = Icons.Default.Help,
+                icon = Icons.AutoMirrored.Filled.Help,
                 title = "Help & Support",
                 onClick = { navController.navigate("help_support") }
             )
@@ -92,7 +95,7 @@ fun ProfileScreen(navController: NavHostController) {
                     containerColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Icon(Icons.Default.Logout, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Logout")
             }
